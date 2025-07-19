@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Task Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Weekly Task Tracker</h1>
+    
+    <!-- Task Input -->
+    <div class="input-section">
+      <input type="text" id="taskInput" placeholder="Enter task..." autocomplete="off">
+      <select id="categorySelect">
+        <option value="YouTube">YouTube</option>
+        <option value="Content Creation">Content Creation</option>
+        <option value="Programming">Programming</option>
+        <option value="Learning English">Learning English</option>
+      </select>
+      <select id="daySelect">
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+      </select>
+      <button onclick="addTask()" class="add-btn">Add Task</button>
+    </div>
+
+    <!-- Task List -->
+    <div id="taskList" class="task-list"></div>
+
+    <!-- Deleted Tasks -->
+    <div id="deletedTasks" class="deleted-tasks">
+      <h2>Deleted Tasks</h2>
+      <div id="deletedTaskList"></div>
+    </div>
+
+    <!-- Debug Message -->
+    <div id="debugMessage" class="debug-message"></div>
+  </div>
+
+  <script>
+    // Store tasks and deleted tasks
+    let tasks = [];
+    let deletedTasks = [];
+
+    // Load tasks from localStorage
+    function loadTasks() {
+      try {
+        const savedTasks = localStorage.getItem('tasks');
+        const savedDeletedTasks = localStorage.getItem('deletedTasks');
+        if (savedTasks) {
+          tasks = JSON.parse(savedTasks);
+          showDebugMessage('✅ Loaded ' + tasks.length + ' tasks successfully');
+        } else {
+          showDebugMessage('ℹ️ No tasks stored');
+        }
+        if (savedDeletedTasks) {
+          deletedTasks = JSON.parse(savedDeletedTasks);
+          showDebugMessage('✅ Loaded ' + deletedTasks.length + ' deleted tasks');
+        }
+      } catch (e) {
+        showDebugMessage('❌ Error loading tasks: ' + e.message);
+      }
+      renderTasks();
+      renderDeletedTasks();
+    }
+
+    // Add new task
+    function addTask() {
+      const taskInput = document.getElementById('taskInput');
+      const categorySelect = document.getElementById('categorySelect');
+      const daySelect = document.getElementById('daySelect');
+      const taskText = taskInput.value.trim();
+      const category = categorySelect.value;
+      const day = daySelect.value;
+
+      if (taskText === '') {
+        alert('Please enter a task!');
+        return;
+      }
+
+      const task = {
+        id: Date.now(),
+        text: taskText,
+        category: category,
+        day: day,
+        completed: false
+      };
+
+      tasks.push(task);
+      try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        showDebugMessage('✅ Task added: ' + taskText);
+      } catch (e) {
+        showDebugMessage('❌ Error saving task: ' + e.message);
+      }
+      taskInput.value = '';
+      renderTasks();
+    }
+
+    // Render tasks
+    function renderTasks() {
+      const taskList = document.getElementById('taskList');
+      taskList.innerHTML = '';
+
+      const days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      days.forEach(day => {
+        const dayTasks = tasks.filter(task => task.day === day);
+        if (dayTasks.length > 0) {
+          const daySection = document.createElement('div');
+          daySection.className = 'day-section';
+          daySection.innerHTML = `<h2>${day}</h2>`;
+          
+          const categories = ['YouTube', 'Content Creation', 'Programming', 'Learning English'];
+          categories.forEach(category => {
+            const categoryTasks = dayTasks.filter(task => task.category === category);
+            if (categoryTasks.length > 0) {
+              const categorySection = document.createElement('div');
+              categorySection.className = 'category-section';
+              categorySection.innerHTML = `<h3>${category}</h3>`;
+              const ul = document.createElement('ul');
+
+              categoryTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                  <span>${task.text}</span>
+                  <div>
+                    <button class="toggle-btn" onclick="toggleTask(${task.id})">${task.completed ? 'Undo Complete' : 'Complete'}</button>
+                    <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+                  </div>
+                `;
+                ul.appendChild(li);
+              });
+
+              categorySection.appendChild(ul);
+              daySection.appendChild(categorySection);
+            }
+          });
+
+          taskList.appendChild(daySection);
+        }
+      });
+    }
+
+    // Render deleted tasks
+    function renderDeletedTasks() {
+      const deletedTaskList = document.getElementById('deletedTaskList');
+      deletedTaskList.innerHTML = '';
+
+      if (deletedTasks.length > 0) {
+        const ul = document.createElement('ul');
+        deletedTasks.forEach(task => {
+          const li = document.createElement('li');
+          li.className = 'task-item deleted';
+          li.innerHTML = `
+            <span>${task.text} (${task.category} - ${task.day})</span>
+            <button class="restore-btn" onclick="restoreTask(${task.id})">Restore</button>
+          `;
+          ul.appendChild(li);
+        });
+        deletedTaskList.appendChild(ul);
+      } else {
+        deletedTaskList.innerHTML = '<p class="no-tasks">No deleted tasks</p>';
+      }
+    }
+
+    // Toggle task completion
+    function toggleTask(id) {
+      tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+      try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        showDebugMessage('✅ Task status updated successfully');
+      } catch (e) {
+        showDebugMessage('❌ Error updating task: ' + e.message);
+      }
+      renderTasks();
+    }
+
+    // Delete task (move to deleted tasks)
+    function deleteTask(id) {
+      const task = tasks.find(task => task.id === id);
+      if (task) {
+        deletedTasks.push(task);
+        tasks = tasks.filter(task => task.id !== id);
+        try {
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+          localStorage.setItem('deletedTasks', JSON.stringify(deletedTasks));
+          showDebugMessage('✅ Task moved to deleted tasks');
+        } catch (e) {
+          showDebugMessage('❌ Error deleting task: ' + e.message);
+        }
+      }
+      renderTasks();
+      renderDeletedTasks();
+    }
+
+    // Restore task
+    function restoreTask(id) {
+      const task = deletedTasks.find(task => task.id === id);
+      if (task) {
+        tasks.push(task);
+        deletedTasks = deletedTasks.filter(task => task.id !== id);
+        try {
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+          localStorage.setItem('deletedTasks', JSON.stringify(deletedTasks));
+          showDebugMessage('✅ Task restored successfully');
+        } catch (e) {
+          showDebugMessage('❌ Error restoring task: ' + e.message);
+        }
+      }
+      renderTasks();
+      renderDeletedTasks();
+    }
+
+    // Show debug message
+    function showDebugMessage(message) {
+      const debugMessage = document.getElementById('debugMessage');
+      debugMessage.textContent = message;
+      debugMessage.classList.add('show');
+      setTimeout(() => {
+        debugMessage.classList.remove('show');
+      }, 3000);
+    }
+
+    // Load tasks on page load
+    loadTasks();
+  </script>
+</body>
+</html>
