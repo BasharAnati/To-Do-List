@@ -161,7 +161,10 @@
           li.className = 'task-item deleted';
           li.innerHTML = `
             <span>${task.text} (${task.category} - ${task.day})</span>
-            <button class="restore-btn" onclick="restoreTask(${task.id})">Restore</button>
+            <div>
+              <button class="restore-btn" onclick="restoreTask(${task.id})">Restore</button>
+              <button class="delete-permanent-btn" onclick="deletePermanently(${task.id})">Delete Permanently</button>
+            </div>
           `;
           ul.appendChild(li);
         });
@@ -175,7 +178,7 @@
     function toggleTask(id) {
       tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
       try {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
+        localStorage.setItem('tasks', JSONercase.stringify(tasks));
         showDebugMessage('✅ Task status updated successfully');
       } catch (e) {
         showDebugMessage('❌ Error updating task: ' + e.message);
@@ -198,6 +201,18 @@
         }
       }
       renderTasks();
+      renderDeletedTasks();
+    }
+
+    // Delete task permanently
+    function deletePermanently(id) {
+      deletedTasks = deletedTasks.filter(task => task.id !== id);
+      try {
+        localStorage.setItem('deletedTasks', JSON.stringify(deletedTasks));
+        showDebugMessage('✅ Task deleted permanently');
+      } catch (e) {
+        showDebugMessage('❌ Error deleting task permanently: ' + e.message);
+      }
       renderDeletedTasks();
     }
 
