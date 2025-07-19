@@ -130,7 +130,7 @@ input:focus, select:focus {
   gap: 10px;
 }
 
-.toggle-btn, .delete-btn, .restore-btn {
+.toggle-btn, .delete-btn, .restore-btn, .delete-permanent-btn {
   padding: 8px 12px;
   border: none;
   border-radius: 6px;
@@ -164,6 +164,16 @@ input:focus, select:focus {
 
 .restore-btn:hover {
   background: #e0a800;
+  transform: translateY(-1px);
+}
+
+.delete-permanent-btn {
+  background: #a71d2a;
+  color: #fff;
+}
+
+.delete-permanent-btn:hover {
+  background: #911823;
   transform: translateY(-1px);
 }
 
